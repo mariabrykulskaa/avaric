@@ -17,7 +17,7 @@ def load_corpus_filtered(fname):
             raw_tokens = line.strip().split()
             filtered_tokens = [
                 t for t in raw_tokens
-                if len(t) >= 3 and t.lower() not in IGNORE_TOKENS
+                if len(t) >= 2 and t.lower() not in IGNORE_TOKENS
             ]
             if filtered_tokens:
                 documents.append(filtered_tokens)
@@ -37,8 +37,8 @@ def save_dictionary(fname, dictionary, shape):
             fout.write(f"{word} {vector_str}\n")
 
 # 1. Загружаем документы из двух файлов с учётом фильтрации
-documents1 = load_corpus_filtered("avaricsent_prelast1.2.txt")
-documents2 = load_corpus_filtered("avaricsent_prelast2.2.txt")
+documents1 = load_corpus_filtered("avaricsentlast1.1.txt")
+documents2 = load_corpus_filtered("avaricsentlast2.1.txt")
 
 # 2. Объединяем всё в один список
 documents = documents1 + documents2
@@ -46,18 +46,20 @@ documents = documents1 + documents2
 # 3. Тренируем модель CBOW (sg=0) с нужными параметрами
 model = Word2Vec(
     sentences=documents,
-    vector_size=8,    # размерность векторов 8
-    window=5,         # "окно" контекста
+    vector_size=80,    # размерность векторов 8
+    window=3, 
+    negative=15,
+    alpha=0.025,
+    min_alpha=0.0001 ,       # "окно" контекста
     min_count=2,      # игнорируем слова, которые встретились меньше 2 раз
     sg=0,             # CBOW
-    workers=4,        # число потоков
-    epochs=5          # число эпох
+    epochs=30          # число эпох
 )
 
 # 4. Извлекаем словарь {слово: вектор}
 dictionary = {word: model.wv[word] for word in model.wv.key_to_index}
 
 # 5. Сохраняем словарь в файл
-save_dictionary("avaricsent_dictionary_cbow.txt", dictionary, (len(dictionary), 8))
+save_dictionary("avaricsent_dictionary_cbow_last.txt", dictionary, (len(dictionary), 80))
 
 print("CBOW-модель (dim=8, min_count=2) обучена и сохранена в avaricsent_dictionary_cbow.txt")
